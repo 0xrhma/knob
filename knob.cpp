@@ -1,5 +1,7 @@
+#include <algorithm>
 #include <cmath>
 #include <cstdint>
+
 extern "C" {
     #include <raylib.h>
 }
@@ -29,8 +31,8 @@ static Color Darken(Color c, float f) {
 // --------------------------------------------------
 class Knob {
 public:
-    Knob(Vector2 pos, float r)
-        : position(pos), radius(r), sqradius(r*r) {}
+    Knob(Vector2 pos, float r, bool lin=false)
+        : position(pos), radius(r), sqradius(r*r), linear(lin){}
 
     void draw() {
         update();
@@ -64,11 +66,15 @@ private:
     Color glow{200, 150, 255, 110};
     Color indicator{235, 235, 235, 255};
 
-    // Usable arc (same idea as your original)
+    // Usable arc
     static constexpr float MIN_ANGLE = PI * 0.25f;  // 45°
     static constexpr float MAX_ANGLE = PI * 1.75f;  // 315°
     static constexpr float RANGE     = MAX_ANGLE - MIN_ANGLE;
 
+    // Linear Variant
+    Vector2 dposition{};
+    bool linear = false;
+    float dangle = 0.0f;
 private:
     void update() {
         Vector2 m = GetMousePosition();
@@ -81,6 +87,8 @@ private:
         if (hovered && IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
             gActiveKnob = this;
             dragging = true;
+            dposition = m;
+            dangle = angle;
         }
 
         // Mouse release → release focus
@@ -92,16 +100,24 @@ private:
 
         // --- Angle update (accept / ignore, NO CLAMP) ---
         if (dragging && gActiveKnob == this) {
-            float a = atan2f(dy, dx);
-
-            // Normalize to 0..2PI
-            if (a < 0.0f)
-                a += 2.0f * PI;
-
-            // Accept only usable arc
-            if (a >= MIN_ANGLE && a <= MAX_ANGLE) {
-                angle = a;
+            
+            // Linear
+            if (linear) {
+                angle = dangle + 0.025*(dposition.y - m.y);
+                angle = std::min( std::max(angle, MIN_ANGLE),MAX_ANGLE);
             }
+            // Non linear
+            else {
+                float a = atan2f(dy, dx);
+                // Normalize to 0..2PI
+                if (a < 0.0f)
+                    a += 2.0f * PI;
+                // Accept only usable arc
+                if (a >= MIN_ANGLE && a <= MAX_ANGLE) {
+                    angle = a;
+                }
+            }
+
         }
 
         // Value mapping
@@ -162,7 +178,7 @@ int main() {
     SetTargetFPS(60);
 
     Knob k1({200, 200}, 75);
-    Knob k2({400, 200}, 75);
+    Knob k2({400, 200}, 75, true); // linear more elegant and daw like
     Knob k3({600, 200}, 75);
 
     while (!WindowShouldClose()) {

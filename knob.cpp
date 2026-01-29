@@ -1,7 +1,6 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
-#include <cstdio>
 
 extern "C" {
     #include <raylib.h>
@@ -65,10 +64,10 @@ private:
     bool  dragging = false;
 
     // Style
-    Color minring{247, 115, 115, 255};
-    Color minglow{248, 139, 139, 110};
-    Color maxring{115, 247, 115, 255};
-    Color maxglow{176, 248, 139, 110};
+    Color maxring{247, 115, 115, 255};
+    Color maxglow{248, 139, 139, 110};
+    Color minring{115, 247, 115, 255};
+    Color minglow{176, 248, 139, 110};
     Color ring;
     Color glow;
 
@@ -180,15 +179,25 @@ private:
     }
 
     void interpolateColors(float fac) {
+        // smoothstep
+        float mix = 2.0f*fac;
+        if (fac < .5){
+            mix = powf(mix, 2.0f);
+        }
+        else {
+            mix = -powf(mix - 2.0f, 2.0f) + 2.0f;
+        }
+        mix *= 0.5f;
+
         // linear interpolation
-        ring.r = (unsigned char)(minring.r + (maxring.r - minring.r)*fac);
-        ring.g = (unsigned char)(minring.g + (maxring.g - minring.g)*fac);
-        ring.b = (unsigned char)(minring.b + (maxring.b - minring.b)*fac);
+        ring.r = (unsigned char)(minring.r + (maxring.r - minring.r)*mix);
+        ring.g = (unsigned char)(minring.g + (maxring.g - minring.g)*mix);
+        ring.b = (unsigned char)(minring.b + (maxring.b - minring.b)*mix);
         
 
-        glow.r = (unsigned char)(minglow.r + (maxglow.r - minglow.r)*fac);
-        glow.g = (unsigned char)(minglow.g + (maxglow.g - minglow.g)*fac);
-        glow.b = (unsigned char)(minglow.b + (maxglow.b - minglow.b)*fac);
+        glow.r = (unsigned char)(minglow.r + (maxglow.r - minglow.r)*mix);
+        glow.g = (unsigned char)(minglow.g + (maxglow.g - minglow.g)*mix);
+        glow.b = (unsigned char)(minglow.b + (maxglow.b - minglow.b)*mix);
     }
 };
 

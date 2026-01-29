@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstdio>
 
 extern "C" {
     #include <raylib.h>
@@ -32,7 +33,10 @@ static Color Darken(Color c, float f) {
 class Knob {
 public:
     Knob(Vector2 pos, float r, bool lin=false)
-        : position(pos), radius(r), sqradius(r*r), linear(lin){}
+        : position(pos), radius(r), sqradius(r*r), linear(lin){
+            ring = minring;
+            glow = minglow;
+        }
 
     void draw() {
         update();
@@ -61,10 +65,16 @@ private:
     bool  dragging = false;
 
     // Style
+    Color minring{247, 115, 115, 255};
+    Color minglow{248, 139, 139, 110};
+    Color maxring{115, 247, 115, 255};
+    Color maxglow{176, 248, 139, 110};
+    Color ring;
+    Color glow;
+
     Color base{60, 60, 60, 255};
-    Color ring{160, 100, 220, 255};
-    Color glow{200, 150, 255, 110};
     Color indicator{235, 235, 235, 255};
+
 
     // Usable arc
     static constexpr float MIN_ANGLE = PI * 0.25f;  // 45°
@@ -118,11 +128,11 @@ private:
                 }
             }
 
+            // Value mapping
+            float t = (angle - MIN_ANGLE) / RANGE;
+            interpolateColors(t);
+            kvalue = (u32)(t * 100.0f);
         }
-
-        // Value mapping
-        float t = (angle - MIN_ANGLE) / RANGE;
-        kvalue = (u32)(t * 100.0f + 0.5f);
     }
 
     void drawBody(bool active, bool muted) {
@@ -168,6 +178,18 @@ private:
             txt
         );
     }
+
+    void interpolateColors(float fac) {
+        // linear interpolation
+        ring.r = (unsigned char)(minring.r + (maxring.r - minring.r)*fac);
+        ring.g = (unsigned char)(minring.g + (maxring.g - minring.g)*fac);
+        ring.b = (unsigned char)(minring.b + (maxring.b - minring.b)*fac);
+        
+
+        glow.r = (unsigned char)(minglow.r + (maxglow.r - minglow.r)*fac);
+        glow.g = (unsigned char)(minglow.g + (maxglow.g - minglow.g)*fac);
+        glow.b = (unsigned char)(minglow.b + (maxglow.b - minglow.b)*fac);
+    }
 };
 
 // --------------------------------------------------
@@ -177,9 +199,9 @@ int main() {
     InitWindow(800, 400, "Final Knob (Proper Angle Logic)");
     SetTargetFPS(60);
 
-    Knob k1({200, 200}, 75);
-    Knob k2({400, 200}, 75, true); // linear more elegant and daw like
-    Knob k3({600, 200}, 75);
+    Knob k1({200, 200}, 75, true);
+    Knob k2({400, 200}, 75, true);
+    Knob k3({600, 200}, 75, true);
 
     while (!WindowShouldClose()) {
         BeginDrawing();

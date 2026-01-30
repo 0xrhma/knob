@@ -66,8 +66,13 @@ private:
     // Style
     Color maxring{247, 115, 115, 255};
     Color maxglow{248, 139, 139, 110};
+    
+    Color midring{247, 247, 115, 255};
+    Color midglow{248, 248, 139, 110};
+
     Color minring{115, 247, 115, 255};
     Color minglow{176, 248, 139, 110};
+    
     Color ring;
     Color glow;
 
@@ -178,26 +183,28 @@ private:
         );
     }
 
+    Color mix(Color s1, Color s2, float fac){
+      if (fac < 0.0f)
+        return s1;
+      if (fac > 1.0f)
+        return s2;
+
+      Color final;
+      final.r = (unsigned char)(s1.r + (s2.r - s1.r)*fac);
+      final.g = (unsigned char)(s1.g + (s2.g - s1.g)*fac);
+      final.b = (unsigned char)(s1.b + (s2.b - s1.b)*fac);
+      final.a = (unsigned char)(s1.a + (s2.a - s1.a)*fac);
+
+      return final;
+    }
+
     void interpolateColors(float fac) {
-        // smoothstep
-        float mix = 2.0f*fac;
-        if (fac < .5){
-            mix = powf(mix, 2.0f);
-        }
-        else {
-            mix = -powf(mix - 2.0f, 2.0f) + 2.0f;
-        }
-        mix *= 0.5f;
-
-        // linear interpolation
-        ring.r = (unsigned char)(minring.r + (maxring.r - minring.r)*mix);
-        ring.g = (unsigned char)(minring.g + (maxring.g - minring.g)*mix);
-        ring.b = (unsigned char)(minring.b + (maxring.b - minring.b)*mix);
-        
-
-        glow.r = (unsigned char)(minglow.r + (maxglow.r - minglow.r)*mix);
-        glow.g = (unsigned char)(minglow.g + (maxglow.g - minglow.g)*mix);
-        glow.b = (unsigned char)(minglow.b + (maxglow.b - minglow.b)*mix);
+      float fac1 = 2.0f*fac;
+      float fac2 = 2.0*(fac - 0.5f);
+      glow = mix(minglow, midglow, fac1);
+      glow = mix(glow, maxglow, fac2);
+      ring = mix(minring, midring, fac1);
+      ring = mix(ring, maxring, fac2);
     }
 };
 
